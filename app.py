@@ -879,7 +879,7 @@ def gerar_txt_streamlit(arquivo_bytes, log):
 def main():
     st.set_page_config(
         page_title=f"Gerador TXT - RPA | {VERSAO}",
-        page_icon="📄",
+        page_icon="🧾",
         layout="centered"
     )
 
@@ -888,7 +888,7 @@ def main():
         <div style="background:#1F1F1F; padding:24px 24px 16px 24px; border-radius:8px;
                     border-top: 6px solid #FF6D00; margin-bottom:24px;">
             <h2 style="color:white; margin:0;">
-                📄 Gerador de Arquivo TXT - RPA | {VERSAO}
+                🧾 Gerador de Arquivo TXT - RPA | {VERSAO}
             </h2>
             <p style="color:#DDDDDD; margin:6px 0 0 0;">
                 Selecione o Excel de origem e clique em Gerar.
@@ -945,7 +945,7 @@ def main():
             conteudo = "\n".join(linhas) + "\n"
             st.session_state.txt_gerado = conteudo.encode("latin-1", errors="replace")
 
-            # Monta nome do arquivo: codEmp_RPA_competencia_AAAAMM.txt
+            # Nome dinâmico: codEmp_RPA_competencia_AAAAMM.txt
             cod_emp = str(meta["codigo_empresa"])
             competencia = competencia_aaaamm(meta["competencia"])
             st.session_state.nome_arquivo = f"{cod_emp}_RPA_competencia_{competencia}.txt"
