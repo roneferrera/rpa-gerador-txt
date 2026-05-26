@@ -657,6 +657,8 @@ def montar_registro_lancamento(meta, reg, log, acum_mes):
     base_irrf = 0.0
     ir_calculado = 0.0
 
+    # base_inss_registro_original: base bruta para cálculo do INSS
+    # (bruto integral, ou 20% do bruto para frete esocial 712/734)
     base_inss_registro_original = bruto
     aliquota_inss = 0.11
 
@@ -686,6 +688,7 @@ def montar_registro_lancamento(meta, reg, log, acum_mes):
     if base_inss_registro_limitada < 0:
         base_inss_registro_limitada = 0.0
 
+    # Cálculo do INSS usa a base limitada ao teto (lógica intacta)
     inss = truncar(base_inss_registro_limitada * aliquota_inss, casas=2)
     if inss < 0:
         inss = 0.0
@@ -693,7 +696,9 @@ def montar_registro_lancamento(meta, reg, log, acum_mes):
     ac["base_inss_empresa"] = base_empresa_nova
     ac["inss_retido_empresa"] = truncar(ac["inss_retido_empresa"] + inss, casas=2)
 
-    base_inss = base_inss_registro_limitada
+    # Campo base_inss no TXT grava o rendimento bruto (base_inss_registro_original),
+    # NÃO a base limitada ao teto. O cálculo do INSS já foi feito acima com a base limitada.
+    base_inss_saida = base_inss_registro_original
 
     rendimento_tributavel_registro = obter_rendimento_tributavel_irrf(bruto, esocial_int)
 
@@ -758,13 +763,13 @@ def montar_registro_lancamento(meta, reg, log, acum_mes):
         perc_iss = 0.0
         valor_iss = 0.0
 
-    valor_iss = limpar_negativo(valor_iss)
-    base_inss = limpar_negativo(base_inss)
-    inss_frete_sest = limpar_negativo(inss_frete_sest)
+    valor_iss       = limpar_negativo(valor_iss)
+    base_inss_saida = limpar_negativo(base_inss_saida)  # bruto original (ou 20% para frete)
+    inss_frete_sest  = limpar_negativo(inss_frete_sest)
     inss_frete_senat = limpar_negativo(inss_frete_senat)
-    inss = limpar_negativo(inss)
-    base_irrf = limpar_negativo(base_irrf)
-    ir_calculado = limpar_negativo(ir_calculado)
+    inss             = limpar_negativo(inss)
+    base_irrf        = limpar_negativo(base_irrf)
+    ir_calculado     = limpar_negativo(ir_calculado)
 
     try:
         campo_codigo_empresa   = fmt_int(codigo_empresa, 7)
@@ -776,7 +781,7 @@ def montar_registro_lancamento(meta, reg, log, acum_mes):
         campo_percentual_iss   = fmt_num(perc_iss, 5, casas=2, permitir_negativo=False)
         campo_valor_iss        = fmt_num(valor_iss, 11, casas=2, permitir_negativo=False)
         campo_data_venc_iss    = data_venc_iss
-        campo_base_inss        = fmt_num(base_inss, 11, casas=2, permitir_negativo=False)
+        campo_base_inss        = fmt_num(base_inss_saida, 11, casas=2, permitir_negativo=False)  # bruto original
         campo_inss_frete_sest  = fmt_num(inss_frete_sest, 8, casas=2, permitir_negativo=False)
         campo_inss_frete_senat = fmt_num(inss_frete_senat, 8, casas=2, permitir_negativo=False)
         campo_valor_inss       = fmt_num(inss, 8, casas=2, permitir_negativo=False)
