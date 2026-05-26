@@ -827,7 +827,7 @@ def montar_registro_lancamento(meta, reg, log, acum_mes):
 
 # ==============================
 # GERAÇÃO DO TXT (versão Streamlit)
-# Recebe bytes do arquivo, retorna lista de linhas
+# Retorna (linhas_txt, meta) ou (None, None)
 # ==============================
 def gerar_txt_streamlit(arquivo_bytes, log):
     try:
@@ -836,7 +836,7 @@ def gerar_txt_streamlit(arquivo_bytes, log):
 
         if meta is None:
             log.append("ERRO: Nenhum metadado/registro válido. Abortando.")
-            return None
+            return None, None
 
         meta["registros"].sort(
             key=lambda r: (
@@ -858,19 +858,19 @@ def gerar_txt_streamlit(arquivo_bytes, log):
 
         if any(str(l).startswith("ERRO") for l in log):
             log.append("ERRO: Geração cancelada. TXT NÃO foi gerado.")
-            return None
+            return None, None
 
         if len(linhas_txt) == 0:
             log.append("ERRO: Nenhum registro válido foi gerado para o TXT.")
-            return None
+            return None, None
 
         log.append(f"Arquivo TXT gerado com {len(linhas_txt)} registros.")
-        return linhas_txt
+        return linhas_txt, meta
 
     except Exception:
         log.append("ERRO FATAL durante a geração do arquivo.")
         log.append(traceback.format_exc())
-        return None
+        return None, None
 
 
 # ==============================
@@ -902,6 +902,8 @@ def main():
         st.session_state.log = [f"Aplicação pronta. Versão: {VERSAO}"]
     if "txt_gerado" not in st.session_state:
         st.session_state.txt_gerado = None
+    if "nome_arquivo" not in st.session_state:
+        st.session_state.nome_arquivo = "saida.txt"
 
     arquivo = st.file_uploader(
         "Excel de origem",
@@ -928,18 +930,25 @@ def main():
     if limpar:
         st.session_state.log = ["Campos limpos."]
         st.session_state.txt_gerado = None
+        st.session_state.nome_arquivo = "saida.txt"
         st.rerun()
 
     if gerar and arquivo is not None:
         st.session_state.log = ["Iniciando geração do arquivo TXT..."]
         st.session_state.txt_gerado = None
+        st.session_state.nome_arquivo = "saida.txt"
 
         arquivo_bytes = arquivo.read()
-        linhas = gerar_txt_streamlit(arquivo_bytes, st.session_state.log)
+        linhas, meta = gerar_txt_streamlit(arquivo_bytes, st.session_state.log)
 
-        if linhas:
+        if linhas and meta:
             conteudo = "\n".join(linhas) + "\n"
             st.session_state.txt_gerado = conteudo.encode("latin-1", errors="replace")
+
+            # Monta nome do arquivo: codEmp_RPA_competencia_AAAAMM.txt
+            cod_emp = str(meta["codigo_empresa"])
+            competencia = competencia_aaaamm(meta["competencia"])
+            st.session_state.nome_arquivo = f"{cod_emp}_RPA_competencia_{competencia}.txt"
 
         st.rerun()
 
@@ -948,7 +957,7 @@ def main():
         st.download_button(
             label="⬇ Baixar arquivo TXT",
             data=st.session_state.txt_gerado,
-            file_name="saida.txt",
+            file_name=st.session_state.nome_arquivo,
             mime="text/plain",
             use_container_width=True,
             type="primary"
